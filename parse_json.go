@@ -6,89 +6,66 @@ import (
 	"io/ioutil"
 )
 
-type selectObject struct {
-	Params []string
-}
-
-type target struct {
-	Measurement string
-	Select      [][]selectObject
-}
-
-type yaxes struct {
-	Label string
-}
-
-type xaxis struct {
-	Name string
-}
-type seriesOverride struct {
-	alias string
-}
-type panels struct {
-	Datasource      string
-	Title           string
-	Targets         []target
-	Yaxes           []yaxes
-	Xaxis           xaxis
-	SeriesOverrides []seriesOverride
-}
-
-type row struct {
-	Title  string
-	Panels []panels
-}
-
-type dashboardResponse struct {
-	Title    string
-	Timezone string
-	Tags     []string
-	Rows     []row
-}
+var FinalMap = make(map[string][]string)
 
 func main() {
 
-	res := dashboardResponse{}
-	str, err := ioutil.ReadFile("/Users/PKhurana/code/grafana/backup_grafana_db/bidder-09_22_2017.json")
-	check(err)
-	//fmt.Print(string(str2))
+	files, _ := ioutil.ReadDir("/Users/PKhurana/code/grafana/backup_grafana_db/")
 
-	json.Unmarshal(str, &res)
-	//fmt.Printf("%+v\n", res)
+	for _, f := range files {
+		fmt.Println(f.Name())
+		res2 := map[string]interface{}{}
+		str2, _ := ioutil.ReadFile("/Users/PKhurana/code/grafana/backup_grafana_db/" + f.Name())
+		json.Unmarshal(str2, &res2)
+		dbName := res2["title"]
+		parseMap(res2, dbName.(string))
+	}
 
-	res2 := map[string]interface{}{}
+	for k, v := range FinalMap {
+		fmt.Println(k, v)
+		fmt.Println()
+		fmt.Println()
+		fmt.Println()
+		fmt.Println()
+		fmt.Println()
+		fmt.Println()
 
-	str2, _ := ioutil.ReadFile("/Users/PKhurana/code/grafana/backup_grafana_db/bidder-09_22_2017.json")
-	json.Unmarshal(str2, &res2)
-	//fmt.Printf("%+v\n", res2)
+	}
 
-	parseMap(res2)
+	// name := "bidder-09_22_2017.json"
+	// str2, _ := ioutil.ReadFile("/Users/PKhurana/code/grafana/backup_grafana_db/" + name)
+	// json.Unmarshal(str2, &res2)
 
+	// dbName := res2["title"]
+	// parseMap(res2, dbName.(string))
+
+	// fmt.Println(FinalMap)
 }
 
-func parseMap(aMap map[string]interface{}) {
+func parseMap(aMap map[string]interface{}, dbName string) {
 	for key, val := range aMap {
 		if key == "title" {
-			fmt.Println(key, ":", val)
+			//fmt.Println(key, ":", val)
+			FinalMap[dbName] = append(FinalMap[dbName], val.(string))
 		}
 		switch val.(type) {
 		case map[string]interface{}:
 			// fmt.Println(key)
-			parseMap(val.(map[string]interface{}))
+			parseMap(val.(map[string]interface{}), dbName)
 		case []interface{}:
-			parseArray(val.([]interface{}))
+			parseArray(val.([]interface{}), dbName)
 		default:
 		}
 	}
 }
 
-func parseArray(anArray []interface{}) {
+func parseArray(anArray []interface{}, dbName string) {
 	for _, val := range anArray {
 		switch val.(type) {
 		case map[string]interface{}:
-			parseMap(val.(map[string]interface{}))
+			parseMap(val.(map[string]interface{}), dbName)
 		case []interface{}:
-			parseArray(val.([]interface{}))
+			parseArray(val.([]interface{}), dbName)
 		default:
 		}
 	}
